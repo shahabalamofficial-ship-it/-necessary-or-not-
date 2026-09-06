@@ -532,7 +532,7 @@
         <path d="M14 14 q 6 -3 12 0" opacity="0.5"/>
       </svg>
     </span>
-    <h1 class="title">Is it <span class="em">necessary</span>, or not?</h1>
+    <h1 class="title" id="siteTitle">Is it <span class="em">necessary</span>, or not?</h1>
     <p class="lede" data-i18n="lede">
       A quiet companion for the small decisions that fill a day. Bring something you are weighing, answer honestly, and let reflection do its slow work.
       <cite data-i18n="ledeCite">— inspired by Marcus Aurelius, who asked at every moment, “Is this necessary?”</cite>
@@ -745,12 +745,16 @@
   };
 
 
+  const $ = (s) => document.querySelector(s);
+
   // ---------- Bilingual + psychology layer ----------
   const LANG_KEY = "necessaryOrNot.language.v1";
   let lang = "en";
   try { lang = localStorage.getItem(LANG_KEY) === "ur" ? "ur" : "en"; } catch(e) {}
 
   const EN = {
+    docTitle: "Necessary or Not? — A Quiet Reflection",
+    titleHTML: 'Is it <span class="em">necessary</span>, or not?',
     lede:"A quiet companion for the small decisions that fill a day. Bring something you are weighing, answer honestly, and let reflection do its slow work.",
     ledeCite:"— inspired by Marcus Aurelius, who asked at every moment, “Is this necessary?”",
     mindTitle:"A gentle pause for the mind 🧠",
@@ -762,6 +766,9 @@
     catCommitment:"A commitment 🤝", catThought:"A thought 💭", catOther:"Something else 🌿",
     start:"Begin reflection ✨", back:"← Back", continue:"Continue →", result:"See reflection",
     notNecessary:"Not necessary", necessary:"Necessary",
+    again:"Reflect on something new 🌱",
+    copy:"Copy result 📋",
+    weight:"% weight",
     historyTitle:"Things you have seen in the light of reflection 🔦",
     clear:"Clear all",
     empty:"Nothing yet. Reflect on something above, and it will gather here.",
@@ -776,6 +783,8 @@
   };
 
   const UR = {
+    docTitle: "ضروری یا نہیں؟ — ایک پُرسکون غور و فکر",
+    titleHTML: 'کیا یہ <span class="em">ضروری</span> ہے، یا نہیں؟',
     lede:"دن کے چھوٹے بڑے فیصلوں کے لیے ایک پُرسکون ساتھی۔ جس چیز کے بارے میں سوچ رہے ہیں اسے سامنے لائیں، ایمانداری سے جواب دیں، اور غور کو اپنا کام کرنے دیں۔",
     ledeCite:"— مارکس آریلیئس سے متاثر، جنہوں نے ہر لمحے پوچھا: “کیا یہ ضروری ہے؟”",
     mindTitle:"ذہن کے لیے ایک نرم سا وقفہ 🧠",
@@ -786,7 +795,11 @@
     catTask:"ایک کام ✍️", catPurchase:"ایک خریداری 🛍️", catHabit:"ایک عادت 🔄",
     catCommitment:"ایک ذمہ داری 🤝", catThought:"ایک خیال 💭", catOther:"کچھ اور 🌿",
     start:"غور شروع کریں ✨", back:"← واپس", continue:"آگے بڑھیں →", result:"غور دیکھیں",
-    notNecessary:"غیر ضروری", necessary:"ضروری", historyTitle:"جن چیزوں کو آپ نے غور کی روشنی میں دیکھا 🔦",
+    notNecessary:"غیر ضروری", necessary:"ضروری",
+    again:"نئی چیز پر غور کریں 🌱",
+    copy:"نتیجہ کاپی کریں 📋",
+    weight:"% وزن",
+    historyTitle:"جن چیزوں کو آپ نے غور کی روشنی میں دیکھا 🔦",
     clear:"سب صاف کریں", empty:"ابھی کچھ نہیں۔ اوپر کسی چیز پر غور کریں، یہ یہاں محفوظ ہو جائے گی۔",
     footer:"یہ غور و فکر کا ایک ٹول ہے، حتمی مشورہ نہیں۔ یہ آپ کی جگہ فیصلہ نہیں کر سکتا اور نہ ہی طبی، قانونی یا مالی مشورے کا متبادل ہے۔ خود پر اعتماد کریں؛ بس اتنا وقفہ لیں کہ بات صاف نظر آ سکے۔",
     whyMatters:"یہ غور کیوں اہم ہے",
@@ -826,6 +839,10 @@
 
     document.documentElement.lang = lang === "ur" ? "ur" : "en";
     document.documentElement.dir = lang === "ur" ? "rtl" : "ltr";
+    document.title = T.docTitle;
+
+    const siteTitle = $("#siteTitle");
+    if (siteTitle) siteTitle.innerHTML = T.titleHTML;
 
     document.querySelectorAll("[data-i18n]").forEach(el => {
       const key = el.dataset.i18n;
@@ -849,8 +866,8 @@
     $("#startBtn").textContent = T.start;
     $("#backBtn").textContent = T.back;
     $("#nextBtn").textContent = state.idx === QUESTIONS.length - 1 ? T.result : T.continue;
-    $("#againBtn").textContent = lang === "ur" ? "نئی چیز پر غور کریں 🌱" : "Reflect on something new 🌱";
-    $("#copyBtn").textContent = lang === "ur" ? "نتیجہ کاپی کریں 📋" : "Copy result";
+    $("#againBtn").textContent = T.again;
+    $("#copyBtn").textContent = T.copy;
     $("#clearHistory").textContent = T.clear;
 
     renderQuestion();
@@ -873,7 +890,6 @@
     idx: 0
   };
 
-  const $ = (s) => document.querySelector(s);
   const screens = {
     intro: $("#screenIntro"),
     question: $("#screenQuestion"),
@@ -889,7 +905,7 @@
   // ---------- Intro screen ----------
   const subjectInput = $("#subjectInput");
   const startBtn = $("#startBtn");
-  const chips = document.querySelectorAll("#categoryChips .chip");
+  let chips = document.querySelectorAll("#categoryChips .chip");
 
   function validateIntro() {
     const hasSubject = subjectInput.value.trim().length > 0;
@@ -1044,7 +1060,7 @@
 
     rBar.style.background = v.color;
     rBar.style.width = "0%";
-    rScoreLabel.textContent = v.pct + "% weight";
+    rScoreLabel.textContent = v.pct + (lang === "ur" ? UR.weight : EN.weight);
     setTimeout(() => { rBar.style.width = v.pct + "%"; }, 120);
 
     rList.innerHTML = "";
